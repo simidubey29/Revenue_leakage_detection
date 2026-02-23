@@ -1,0 +1,28 @@
+-- ============================================
+-- RULE 1: Expected Revenue Calculation
+-- ============================================
+
+CREATE OR REPLACE VIEW expected_monthly_revenue AS
+SELECT
+    u.customer_id,
+    u.product_id,
+    DATE_TRUNC('month', u.usage_date) AS billing_month,
+    SUM(u.units_used) AS total_units_used,
+    c.price_per_unit,
+    c.discount_percent,
+    ROUND(
+        SUM(u.units_used) * c.price_per_unit
+        * (1 - c.discount_percent / 100),
+        2
+    ) AS expected_revenue
+FROM usage_events u
+JOIN contracts c
+    ON u.customer_id = c.customer_id
+   AND u.product_id = c.product_id
+   AND u.usage_date BETWEEN c.start_date AND c.end_date
+GROUP BY
+    u.customer_id,
+    u.product_id,
+    billing_month,
+    c.price_per_unit,
+    c.discount_percent;
